@@ -1,0 +1,136 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PumpMyMeme.com</title>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+background-color: #0d0d0d;
+color: #ffffff;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 50px 20px;
+}
+
+h1 {
+font-size: 2.5rem;
+margin-bottom: 20px;
+}
+
+input {
+width: 300px;
+padding: 10px;
+border-radius: 5px;
+border: none;
+margin-bottom: 20px;
+font-size: 1rem;
+}
+
+.button-group {
+display: flex;
+gap: 20px;
+flex-wrap: wrap;
+}
+
+button {
+padding: 12px 24px;
+font-size: 1rem;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+background: #ff5c5c;
+color: white;
+transition: background 0.3s;
+}
+
+button:hover {
+background: #ff1f1f;
+}
+
+.note {
+margin-top: 40px;
+color: #aaa;
+font-size: 0.9rem;
+}
+</style>
+</head>
+<body>
+
+<h1>PumpMyMeme.com 🚀</h1>
+<input type="text" id="tokenAddress" placeholder="Paste Token Address">
+
+<div class="button-group">
+<button onclick="submitPromotion(0.2, 3)">🚀 Basic – 0.2 SOL (3h)</button>
+<button onclick="submitPromotion(0.5, 12)">🔥 Viral – 0.5 SOL (12h)</button>
+</div>
+
+<div class="note">💡 You'll need Phantom Wallet to submit your meme coin.</div>
+
+<script>
+const OWNER_WALLET = "8Gqbj5vuzcvAmV4sCX4os58BM82DmLa6VFyiHk1nH7Kp";
+
+async function connectWallet() {
+const provider = window.phantom?.solana;
+if (!provider?.isPhantom) {
+alert("Please install Phantom Wallet.");
+return null;
+}
+
+try {
+const connection = await provider.connect();
+return provider;
+} catch (err) {
+alert("Wallet connection failed.");
+return null;
+}
+}
+
+async function submitPromotion(amountSOL, durationHours) {
+const tokenAddress = document.getElementById("tokenAddress").value.trim();
+if (!tokenAddress) {
+alert("Please paste your token address.");
+return;
+}
+
+const provider = await connectWallet();
+if (!provider) return;
+
+const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+const fromPubkey = provider.publicKey;
+const toPubkey = new solanaWeb3.PublicKey(OWNER_WALLET);
+const lamports = solanaWeb3.LAMPORTS_PER_SOL * amountSOL;
+
+const transaction = new solanaWeb3.Transaction().add(
+solanaWeb3.SystemProgram.transfer({
+fromPubkey,
+toPubkey,
+lamports,
+})
+);
+
+transaction.feePayer = fromPubkey;
+const { blockhash } = await connection.getLatestBlockhash();
+transaction.recentBlockhash = blockhash;
+
+try {
+const signed = await provider.signTransaction(transaction);
+const txid = await connection.sendRawTransaction(signed.serialize());
+alert(`✅ Payment sent!\nTX: ${txid}\nYour meme coin is now live for ${durationHours} hours!`);
+
+// Here, you can call a backend endpoint or Firebase to store the token address + expiry time
+// Example:
+// saveToDatabase(tokenAddress, Date.now() + durationHours * 60 * 60 * 1000);
+
+} catch (err) {
+alert("❌ Payment failed. Try again.");
+console.error(err);
+}
+}
+</script>
+</body>
+</html>
+

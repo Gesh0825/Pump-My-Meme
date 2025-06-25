@@ -1,100 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Promote Meme Coins</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0d1117;
-      color: #f0f6fc;
-    }
-    header {
-      background-color: #161b22;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-    }
-    main {
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #21262d;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-    label {
-      display: block;
-      margin: 15px 0 5px;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 5px;
-      background-color: #238636;
-      color: white;
-      cursor: pointer;
-    }
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 0.9rem;
-      color: #8b949e;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>PumpMyMeme.com</title>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+background-color: #0d0d0d;
+color: #ffffff;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 50px 20px;
+}
+
+h1 {
+font-size: 2.5rem;
+margin-bottom: 20px;
+}
+
+input {
+width: 300px;
+padding: 10px;
+border-radius: 5px;
+border: none;
+margin-bottom: 20px;
+font-size: 1rem;
+}
+
+.button-group {
+display: flex;
+gap: 20px;
+flex-wrap: wrap;
+}
+
+button {
+padding: 12px 24px;
+font-size: 1rem;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+background: #ff5c5c;
+color: white;
+transition: background 0.3s;
+}
+
+button:hover {
+background: #ff1f1f;
+}
+
+.note {
+margin-top: 40px;
+color: #aaa;
+font-size: 0.9rem;
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>🚀 Promote Meme Coins</h1>
-    <p>Get your coin seen across all major social platforms.</p>
-  </header>
 
-  <main>
-    <form id="submitForm">
-      <label for="coinName">Meme Coin Name</label>
-      <input type="text" id="coinName" name="coinName" required />
+<h1>PumpMyMeme.com 🚀</h1>
+<input type="text" id="tokenAddress" placeholder="Paste Token Address">
 
-      <label for="symbol">Symbol (e.g., $DOGE)</label>
-      <input type="text" id="symbol" name="symbol" required />
+<div class="button-group">
+<button onclick="submitPromotion(0.2, 3)">🚀 Basic – 0.2 SOL (3h)</button>
+<button onclick="submitPromotion(0.5, 12)">🔥 Viral – 0.5 SOL (12h)</button>
+</div>
 
-      <label for="website">Coin Website</label>
-      <input type="url" id="website" name="website" required />
+<div class="note">💡 You'll need Phantom Wallet to submit your meme coin.</div>
 
-      <label for="description">Short Description</label>
-      <textarea id="description" name="description" rows="4" required></textarea>
+<script>
+const OWNER_WALLET = "8Gqbj5vuzcvAmV4sCX4os58BM82DmLa6VFyiHk1nH7Kp";
 
-      <label for="contact">Your Email or Telegram</label>
-      <input type="text" id="contact" name="contact" required />
+async function connectWallet() {
+const provider = window.phantom?.solana;
+if (!provider?.isPhantom) {
+alert("Please install Phantom Wallet.");
+return null;
+}
 
-      <button type="submit">Submit for Promotion</button>
-    </form>
-  </main>
+try {
+const connection = await provider.connect();
+return provider;
+} catch (err) {
+alert("Wallet connection failed.");
+return null;
+}
+}
 
-  <footer>
-    &copy; 2025 PromoteMemeCoins — All rights reserved.
-  </footer>
+async function submitPromotion(amountSOL, durationHours) {
+const tokenAddress = document.getElementById("tokenAddress").value.trim();
+if (!tokenAddress) {
+alert("Please paste your token address.");
+return;
+}
 
-  <script>
-    const form = document.getElementById('submitForm');
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      alert('✅ Submission received! We will review and begin promotion.');
-      form.reset();
-    });
-  </script>
+const provider = await connectWallet();
+if (!provider) return;
+
+const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+const fromPubkey = provider.publicKey;
+const toPubkey = new solanaWeb3.PublicKey(OWNER_WALLET);
+const lamports = solanaWeb3.LAMPORTS_PER_SOL * amountSOL;
+
+const transaction = new solanaWeb3.Transaction().add(
+solanaWeb3.SystemProgram.transfer({
+fromPubkey,
+toPubkey,
+lamports,
+})
+);
+
+transaction.feePayer = fromPubkey;
+const { blockhash } = await connection.getLatestBlockhash();
+transaction.recentBlockhash = blockhash;
+
+try {
+const signed = await provider.signTransaction(transaction);
+const txid = await connection.sendRawTransaction(signed.serialize());
+alert(`✅ Payment sent!\nTX: ${txid}\nYour meme coin is now live for ${durationHours} hours!`);
+
+// Here, you can call a backend endpoint or Firebase to store the token address + expiry time
+// Example:
+// saveToDatabase(tokenAddress, Date.now() + durationHours * 60 * 60 * 1000);
+
+} catch (err) {
+alert("❌ Payment failed. Try again.");
+console.error(err);
+}
+}
+</script>
 </body>
 </html>
